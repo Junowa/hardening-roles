@@ -1,0 +1,5 @@
+windows_list:
+  - name: server.acme
+    ipaddr: 10.1.0.12
+
+

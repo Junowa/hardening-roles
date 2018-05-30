@@ -1,0 +1,14 @@
+# Use local clock
+server 127.127.1.0 prefer
+fudge 127.127.1.0 stratum 10
+
+driftfile /var/lib/ntp/drift
+
+# Localhost full access
+restrict 127.0.0.1 
+
+# Query access on COM subnet
+restrict 24.24.1.0 mask 255.255.255.224 nomodify notrap
+
+
+

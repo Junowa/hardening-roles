@@ -1,0 +1,36 @@
+
+  - name: Copy rsyncd configuration file
+    template: src=rsyncd.conf.j2 dest=/etc/rsyncd.conf owner=root group=root mode=0644
+    notify:
+      - restart rsyncd
+    become: yes
+    become_method: sudo 
+
+  - name: Ensure rsyncd service is running and enabled
+    service: name=rsyncd state=started enabled=yes
+    become: yes
+    become_method: sudo
+
+  - name: Open firewalld tcp/873
+    firewalld: 
+      port: 873/tcp 
+      permanent: true 
+      state: enabled
+      zone: "{{ rsyncd_fw_zone }}"
+    become: yes
+    become_method: sudo
+
+  - name: Open firewalld udp/873
+    firewalld: 
+      port: 873/udp 
+      permanent: true 
+      state: enabled
+      zone: "{{ rsyncd_fw_zone }}"
+    become: yes
+    become_method: sudo
+
+  - name: Restart firewalld service
+    shell: systemctl restart firewalld
+    become: yes
+    become_method: sudo
+

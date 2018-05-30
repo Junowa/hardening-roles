@@ -1,0 +1,57 @@
+---
+
+## CG-LINUX-R10 - mot de passe grub (default in kickstart)
+## CG-LINUC-R11 - mot de passe grub (default in kickstart)
+  - name: Get Absolute Path to grub.cfg
+    command: readlink -f /boot/grub2/grub.cfg
+    register: readlink
+    changed_when: false
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Set User/Group Owner on grub.cfg
+    file: >
+      path={{ readlink.stdout }}
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Set Permissions on /etc/grub.conf (Scored)
+    file: >
+      path={{ readlink.stdout }}
+      mode=0400
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Get Absolute Path to grub.cfg
+    command: readlink -f /boot/grub/grub.conf
+    register: readlink2
+    changed_when: false
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6" 
+
+  - name: Set User/Group Owner on grub.cfg
+    file: >
+      path={{ readlink2.stdout }}
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6" 
+
+  - name: Set Permissions on /etc/grub.conf (Scored)
+    file: >
+      path={{ readlink2.stdout }}
+      mode=0400
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6" 
+

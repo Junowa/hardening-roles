@@ -1,0 +1,6 @@
+# Default vars
+
+# Local path to access repo data
+repo_local: file:///mirror.local/
+nginx_rootfolder: /mirror/
+repo_fw_zone: public

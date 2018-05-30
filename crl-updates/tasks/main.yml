@@ -1,0 +1,24 @@
+---
+
+  - name: Install wget
+    yum: name=wget state=present
+    become: yes
+    become_method: sudo
+
+  - file:
+      path: "{{ crl_updates_dest }}"
+      state: directory 
+      owner: root
+      group: root
+    become: yes
+    become_method: sudo
+
+  - name: Daily CRL updates
+    cron: name="Daily CRL updates"
+          minute="15"
+          hour="3"
+          weekday="*"
+          job="wget -r --no-parent -nH --cut-dirs=1 {{ crl_updates_url }} -P {{ crl_updates_dest }}"
+    when: crl_updates_url is defined
+    become: yes
+    become_method: sudo

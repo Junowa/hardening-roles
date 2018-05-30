@@ -1,0 +1,64 @@
+---
+
+  ###########################
+  # Disable IPv6 
+  ###########################
+  - name: Disable IPv6 via sysctl
+    sysctl: >
+      name=net.ipv6.conf.all.disable_ipv6
+      value=1
+      state=present
+      ignoreerrors=true
+      reload=yes
+    become: yes
+    become_method: sudo
+    tags:
+      - disable_ipv6
+
+  ###########################
+  # Timezone configuration
+  ###########################
+  - name: Remove locatime (for RHEL6 only)
+    file: path=/etc/localtime state=absent
+    become: yes
+    become_method: sudo 
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6"
+    tags:
+      - timezone
+  
+  - name: Set timezone to {{ timezone }}
+    file: src=/usr/share/zoneinfo/{{ timezone }} dest=/etc/localtime state=link
+    become: yes
+    become_method: sudo 
+    tags:
+      - timezone
+
+  ##################################
+  # Activate haldameon (TO REMOVE) 
+  ##################################
+
+  - name: Enable and restart HAL Daemon
+    service: name=haldaemon enabled=yes state=restarted
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6"
+
+  - name: Add EPEL7 GPG key
+    copy: src=RPM-GPG-KEY-EPEL-7  
+          dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+          owner=root
+          group=root
+          mode=0644
+    become: yes
+    become_method: sudo 
+    when: ansible_distribution_major_version == "7"
+
+  - name: Add EPEL6 GPG key
+    copy: src=RPM-GPG-KEY-EPEL-6  
+          dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+          owner=root
+          group=root
+          mode=0644
+    become: yes
+    become_method: sudo 
+    when: ansible_distribution_major_version == "6"

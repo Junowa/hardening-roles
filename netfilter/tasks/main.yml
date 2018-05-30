@@ -1,0 +1,67 @@
+---
+
+- name: test facts interfaces
+  debug: msg="Interface \n {{ item }}"
+  with_items: "{{ ansible_interfaces }}"
+
+- name: add vars for netfilter in /etc/default
+  template: src=../templates/default_netfilter.j2 
+            dest=/etc/default/netfilter
+  become: yes
+  become_method: sudo
+
+- name: create netfilter folders ( /etc/sysconfig/netfilter.d & /usr/libexec/netfilter/ )
+  file: path={{ item }}
+        state=directory
+  with_items:
+    - /etc/sysconfig/netfilter.d
+    - /usr/libexec/netfilter/
+  become: yes
+  become_method: sudo
+
+#chmod +x
+- name: copy netfilter.init to /usr/libexec/netfilter/netfilter.init 
+  copy: src=../files/netfilter.init 
+        dest=/usr/libexec/netfilter/netfilter.init
+        mode="755"
+  become: yes
+  become_method: sudo
+
+- name: copy netfilter.service to /usr/lib/systemd/system/netfilter.service
+  copy: src=../files/netfilter.service
+        dest=/usr/lib/systemd/system/netfilter.service
+  become: yes
+  become_method: sudo
+
+# to remove if firewalld not installed by default
+- name: disable and stop firewalld
+  shell: systemctl {{ item }} firewalld
+  with_items:
+    - stop
+    - disable
+  become: yes
+  become_method: sudo
+
+- name: add common rules
+  template: src=../templates/common_rules.j2 
+            dest=/etc/sysconfig/netfilter.d/ipt_common_rules
+  become: yes
+  become_method: sudo
+
+- name: start and enable netfilter
+  shell: systemctl {{ item }} netfilter
+  with_items:
+    - start
+    - enable
+  become: yes
+  become_method: sudo
+
+
+# Usable in ansible 2.2
+
+#- name: start and enable netfilter
+#  systemd: name=netfilter
+#           state=started
+#           enabled=true
+#  become: yes
+#  become_method: sudo

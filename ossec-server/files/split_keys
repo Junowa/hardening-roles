@@ -1,0 +1,20 @@
+#!/bin/bash
+
+INPUT_FILE="/var/ossec/etc/client.keys"
+OUTPUT_DIRECTORY="/home/admloc/ossec_client_files/"
+
+#
+#
+
+if [ "$OUTPUT_DIRECTORY" = "/" ] || [ "$OUTPUT_DIRECTORY" = "/*" ]; then
+  echo "if you do that, you will delete all your system ..."
+  exit 1
+fi
+
+rm -Rf $OUTPUT_DIRECTORY
+mkdir $OUTPUT_DIRECTORY
+while read line; do echo "$line" > $OUTPUT_DIRECTORY$(echo $line | awk '{print $2}' ); done < $INPUT_FILE
+rm -f $OUTPUT_DIRECTORY"#*"*
+echo "files generated in $OUTPUT_DIRECTORY"
+
+exit 0

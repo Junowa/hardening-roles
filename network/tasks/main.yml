@@ -1,0 +1,104 @@
+---
+
+  - name: Stop NetworkManager(RHEL)
+    service: name=NetworkManager state=stopped
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6"
+
+  - name: Disable NetworkManager(RHEL)
+    service: name=NetworkManager enabled=no
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6"
+
+  - name: copy ethernet configuration files
+    template: src=ifcfg-eth.j2 
+              dest=/etc/sysconfig/network-scripts/ifcfg-eth{{ item.device_id }}
+    become: yes
+    become_method: sudo
+    when: "{{ item.device_id is defined }}"
+    with_items: "{{ networks }}"
+
+  - name: Update ethernet configuration files with HWADDR
+    lineinfile:
+      path: /etc/sysconfig/network-scripts/ifcfg-{{ item }}
+      line: "HWADDR={{ hostvars[inventory_hostname]['ansible_' +item].macaddress }}"
+    when: item[0:3] == "eth" 
+          and (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+    with_items: "{{ ansible_interfaces }}"
+    become: yes
+    become_method: sudo
+
+  - name: Copy ethernet virtual configuration files
+    template: src=ifcfg-virtual-eth.j2 
+              dest=/etc/sysconfig/network-scripts/ifcfg-eth{{ item.virtual_id }}
+    become: yes
+    become_method: sudo
+    when: "{{ item.virtual_id is defined }}"
+    with_items: "{{ networks }}"
+
+  - name: Copy static route configuration files
+    template: src=route-eth.j2 
+              dest=/etc/sysconfig/network-scripts/route-eth{{ item.device_id }}
+    become: yes
+    become_method: sudo
+    when: "{{ item.device_id is defined }}"
+    with_items: "{{ networks }}"
+
+  - name: Copy resolv.conf
+    template: src=resolv.j2 
+              dest=/etc/resolv.conf
+    become: yes
+    become_method: sudo
+    tags:
+      -hostname
+
+  - name: Update /etc/hosts
+    lineinfile: dest=/etc/hosts regexp='{{ hostvars[inventory_hostname]['networks'][0]['ip_address'] }}' line='{{ hostvars[inventory_hostname]['networks'][0]['ip_address'] }} {{ inventory_hostname | lower }}.{{ domains[0] }} {{ inventory_hostname | lower }}'
+    become: yes
+    become_method: sudo
+    tags:
+      - hostname
+
+
+  - name: Setting hostname
+    hostname: name={{ inventory_hostname | lower }}
+    become: yes
+    become_method: sudo
+    tags:
+      - hostname
+
+  - name: Restart network service
+    systemd:
+      name: firewalld
+      state: restarted
+      daemon_reload: yes
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7") or
+          (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Restart network service
+    systemd:
+      name: network
+      state: restarted
+      daemon_reload: yes
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7") or
+          (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Restart network service
+    service: name=network state=restarted
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6"
+
+  - name: Enable network service
+    service: name=network enabled=yes
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6"

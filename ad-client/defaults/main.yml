@@ -1,0 +1,4 @@
+---
+
+ou_ad: "OU=Serveurs Nexium,OU=Linux,OU=Serveurs MLF,OU=NOC,DC=isr,DC=ip-defense,DC=defense,DC=gouv,dc=fr"
+ou_sudo: "OU=Serveurs Nexium,OU=Sudoers,OU=Administration Locale,OU=NOC,DC=isr,DC=ip-defense,DC=defense,DC=gouv,dc=fr"

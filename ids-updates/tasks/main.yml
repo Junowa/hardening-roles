@@ -1,0 +1,68 @@
+---
+
+  - name: Install nginx 
+    yum: name=nginx state=present
+    become: yes
+    become_method: sudo
+
+  - name: Install wget
+    yum: name=wget state=present
+    become: yes
+    become_method: sudo
+
+  - name: Copy nginx configuration file
+    template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf owner=root group=root mode=0644
+    notify:
+      - restart nginx
+    become: yes
+    become_method: sudo 
+
+  - name: Ensure nginx is running and enabled
+    service: name=nginx state=started enabled=yes
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Open firewalld tcp/80
+    firewalld: 
+      port: 80/tcp 
+      permanent: true 
+      state: enabled 
+      zone: "{{ item }}"
+    become: yes
+    become_method: sudo
+    with_items:
+      - "{{ repo_fw_zone }}"
+
+  - name: Restart firewalld service
+    shell: systemctl restart firewalld
+    become: yes
+    become_method: sudo
+
+  - name: Create "{{ ids_updates_path }}"
+    file:
+      path: "{{ ids_updates_path }}"
+      state: directory
+      mode: 0755
+    become: yes
+    become_method: sudo
+
+  - name: Daily IDS updates
+    cron: name="Daily IDS updates"
+          minute="0"
+          hour="3"
+          weekday="*"
+          job="wget -r --no-parent -nH --cut-dirs=1 {{ ids_updates_syncurl }} -P {{ ids_updates_path }}"
+    when: ids_updates_syncurl is defined
+    become: yes
+    become_method: sudo
+
+  - name: Daily IDS cleaning
+    cron: name="Daily IDS cleaning"
+          minute="30"
+          hour="3"
+          weekday="*"
+          job="find {{ ids_updates_path }}/* -mtime +100 -exec rm -f {} \;"
+    when: ids_updates_syncurl is defined
+    become: yes
+    become_method: sudo

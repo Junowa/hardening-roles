@@ -1,0 +1,2 @@
+in.eth0.udp.dpt.{{ ossec_server_port }}.pass
+

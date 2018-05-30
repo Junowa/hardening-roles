@@ -1,0 +1,48 @@
+---
+
+# Power off before customizing
+  - vmware_guest_facts:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      name: "{{ vmname }}"
+    register: facts
+    delegate_to: localhost
+
+  - name: Power off  "{{ vmname }}"
+    vmware_guest:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      name: "{{ vmname }}"
+      state: poweredoff
+    when: facts.instance.hw_power_status == "poweredOn"
+    delegate_to: localhost
+
+# Customize
+  - name: Add vmdk via vCenter
+    shell: /bin/python {{ role_path }}/files/plugin_add_vmdk.py {{ vcenter_hostname }} 
+                                   {{ vcenter_username }} {{ vcenter_password }}
+                                   {{ vmname }} {{ item.type }} {{ item.size }}
+    with_items: "{{ vmdk_data }}"
+    when: vmdk_data is defined
+    delegate_to: localhost
+
+
+# Power on
+  - name: Power on  "{{ vmname }}"
+    vmware_guest:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      name: "{{ vmname }}"
+      state: poweredon
+      wait_for_ip_address: yes
+    delegate_to: localhost
+

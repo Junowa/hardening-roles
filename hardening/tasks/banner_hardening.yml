@@ -1,0 +1,49 @@
+
+  - name: Banner /etc/{{ item }}
+    template: src=etc/{{ item }}
+              dest=/etc/{{ item }}
+    with_items:
+      - motd
+      - issue
+      - issue.net
+    become: yes
+    become_method: sudo
+    tags:
+      - banner
+
+# TODO : yum-utils must be installed
+  - yum: list=gdm
+    register: gdm
+    become: yes
+    become_method: sudo
+    tags:
+      - banner
+      - gui
+
+  - name: GDM Banner definition
+    shell: >
+      gconftool-2 --direct 
+      --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory 
+      --type string 
+      --set /apps/gdm/simple-greeter/banner_message_text
+      "{{ banner }}"
+    become: yes
+    become_method: sudo
+    when: gdm.results[0].yumstate == "installed"
+    tags:
+      - banner
+      - gui
+
+
+  - name: GDM Banner definition
+    shell: >
+      gconftool-2 --direct 
+      --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory 
+      --type bool 
+      --set /apps/gdm/simple-greeter/banner_message_enable "true"
+    become: yes
+    become_method: sudo
+    when: gdm.results[0].yumstate == "installed"
+    tags:
+      - banner
+      - gui

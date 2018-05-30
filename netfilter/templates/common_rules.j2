@@ -1,0 +1,27 @@
+###
+# Configuration du firewall 
+#
+# Nom du fichier : ipt_*
+#
+# Format: (in|out|for).<netif>.<protocol>.(dpt|spt).<port>.(pass|drop)
+# OR (in|out|for).<netif>.icmp.type.(any|<icmp_type>).(pass|drop)
+#
+# ex.: in.eth0.tcp.dpt.ssh.pass
+# -A INPUT -i eth0 -m tcp -p tcp --dport ssh -m conntrack \
+#   --ctstate NEW,ESTABLISHED -j IN.ETH0.TCP.DPT.SSH.PASS
+# -A IN.ETH0.TCP.DPT.SSH.PASS -j LOG --log-level info \
+#   --log-prefix  in.eth0.tcp.dpt.ssh.pass
+# -A IN.ETH0.TCP.DPT.SSH.PASS -j ACCEPT
+# Longueur max d'une chaine 29 caractères.
+#
+{%- for intf in ansible_interfaces %}
+	{%- if intf|string() != "lo"|string() %}
+
+in.{{ intf }}.tcp.dpt.ssh.pass
+
+	{%- endif %}
+{% endfor %}
+
+###
+# EOF
+#

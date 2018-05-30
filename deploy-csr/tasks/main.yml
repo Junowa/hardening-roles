@@ -1,0 +1,19 @@
+
+  - name: Import {{ inventory_hostname }} to vcenter
+    shell: export LD_LIBRARY_PATH=/opt/shibboleth/lib64/:$LD_LIBRARY_PATH             
+           && /usr/bin/powershell -NonInteractive {{ role_path }}/files/esxi_import_csr.ps1 
+                {{ vcenter_hostname }} 
+                {{ vcenter_username }} 
+                {{ vcenter_password }}
+                {{ template_dir }}
+                {{ template }}
+                {{ compute }}
+                {{ zone }}
+                {{ inventory_hostname }}
+                {{ hostvars[inventory_hostname]['networks'][0]['net_name'] }}
+                {{ hostvars[inventory_hostname]['networks'][0]['ip_address'] }}/{{ hostvars[inventory_hostname]['networks'][0]['prefix'] }}
+                {{ hostvars[inventory_hostname]['networks'][0]['gateway'] }}
+
+    delegate_to: localhost
+    register: import
+    failed_when: import.stderr

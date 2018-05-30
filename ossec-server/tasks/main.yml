@@ -1,0 +1,125 @@
+---
+- name: add repo files to repo server
+  become: yes
+  become_method: sudo
+  delegate_to: "{{ repo }}"
+  unarchive: src=atomicorp.com.tar.gz
+        dest=/mirror/
+        owner=root
+        group=root
+        mode=0777
+
+- name: Add atomic repository
+  template: src=atomic.repo.j2
+            dest=/etc/yum.repos.d/atomic.repo
+            owner=root
+            group=root
+            mode=0644
+  become: yes
+  become_method: sudo
+
+# https://www.atomicorp.com/RPM-GPG-KEY.art.txt
+- name: Add atomic GPG key
+  copy: src=RPM-GPG-KEY.art.txt  
+        dest=/etc/pki/rpm-gpg/RPM-GPG-KEY.art.txt 
+        owner=root 
+        group=root 
+        mode=0644
+  become: yes
+  become_method: sudo
+
+- name: Install ossec server
+  yum: name={{ item }}
+       state=installed
+  with_items:
+    - ossec-hids
+    - ossec-hids-server
+  become: yes
+  become_method: sudo
+
+- name: Enable syslog client
+  command: /var/ossec/bin/ossec-control enable client-syslog
+  become: yes
+  become_method: sudo
+
+#- name: Install ossec server private SSL key
+#  copy: src=ossec.key
+#        dest=/var/ossec/etc/sslmanager.key
+#        owner=root
+#        group=root
+#        mode=0600
+#  become: yes
+#  become_method: sudo
+
+#- name: Install ossec server public SSL cert
+#  copy: src=ossec.crt
+#        dest=/var/ossec/etc/sslmanager.cert
+#        owner=root 
+#        group=root 
+#        mode=0644
+#  become: yes
+#  become_method: sudo
+
+- name: Set ossec server config
+  template: src=ossec-server.conf.j2 
+            dest=/var/ossec/etc/ossec-server.conf
+  become: yes
+  become_method: sudo
+
+- name: Copy local rules
+  copy: src=local_rules.xml 
+        dest=/var/ossec/rules
+  become: yes
+  become_method: sudo
+
+- name: Open firewalld udp/1514
+  firewalld: 
+    port: 1514/udp
+    permanent: true 
+    state: enabled 
+    zone: "{{ ossec_fw_zone }}"   
+  become: yes
+  become_method: sudo
+
+- name: Restart firewalld service
+  systemd:
+    name: firewalld
+    state: restarted 
+  become: yes
+  become_method: sudo
+
+- name: Ensure ossec server is running and enabled at start up
+  shell: systemctl {{ item }} ossec-hids
+  become: yes
+  become_method: sudo
+  with_items:
+    - start
+    - enable
+
+- name: import client list for generation
+  template: src=windows_list.j2
+            dest=/var/ossec/wlist
+  become: yes
+  become_method: sudo
+
+- name: generate keys for client
+  shell: /var/ossec/bin/manage_agents -f /wlist
+  become: yes
+  become_method: sudo
+
+- name: import script to split keys for each client
+  copy: src=split_keys
+        dest=/var/ossec/build_clients_keys
+        mode=777
+  become: yes
+  become_method: sudo
+
+- name: execute script to split client keys
+  shell: /var/ossec/build_clients_keys
+  become: yes
+  become_method: sudo
+
+- name: Restart ossec
+  command: /var/ossec/bin/ossec-control restart
+  become: yes
+  become_method: sudo

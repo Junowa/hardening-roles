@@ -1,0 +1,10 @@
+---
+
+  # Create vg/lv as defined in vars
+  - include: tasks/lvm_create.yml
+    when: (vmdk_data is defined) and (vg_list is defined)
+
+  # Update existing vg_root with additional vmdk
+  - include: tasks/lvm_default.yml
+    when: (vmdk_data is defined) and (vg_list is not defined)
+  

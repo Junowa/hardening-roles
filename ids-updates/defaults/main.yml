@@ -1,0 +1,6 @@
+
+
+nginx_rootfolder: /mirror/
+ids_updates_path: /mirror/ids-updates/
+repo_fw_zone: public
+#ids_updates_syncurl: http://mc-mirror/ids-updates/ 

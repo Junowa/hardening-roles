@@ -1,0 +1,9 @@
+This directory contains factory keys.
+Default passphrase : Descartes@2016
+
+Key generation commands :
+# local key for database signing
+> twadmin -m G -L local.key
+# site key for config signing
+> twadmin -m G -S site.key
+

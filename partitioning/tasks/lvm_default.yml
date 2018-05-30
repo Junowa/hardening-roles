@@ -1,0 +1,33 @@
+---
+
+  - name: Update vg_root with /dev/sdb
+    lvg: vg=vg_root pvs=/dev/sda3,/dev/sdb
+    become: yes
+    become_method: sudo
+  
+  - name: Extend lv_root with free space
+    lvol: 
+      vg: vg_root 
+      lv: root 
+      size: +100%FREE
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+
+  - name: Resize filsystem
+    shell: /sbin/resize2fs /dev/vg_root/root
+    with_items: '{{ansible_mounts}}'
+    when: (item.device == '/dev/mapper/vg_root-root') and
+          (item.fstype != 'xfs')
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+
+  - name: Resize filsystem
+    shell: /sbin/xfs_growfs /dev/vg_root/root
+    with_items: '{{ansible_mounts}}'
+    when: (item.device == '/dev/mapper/vg_root-root') and
+          (item.fstype == 'xfs')
+    become: yes
+    become_method: sudo
+    ignore_errors: yes

@@ -1,0 +1,174 @@
+---
+
+# NCIRC - ssh_client_hardening
+# GC-LINUX-R26 - Desactivation du login root pour ssh
+# # GC-LINUX-R27 - Droits du fichier sshd_config
+# # NCIRC - ssh_port_22
+# # NCIRC - ssh_protocol_2
+# # NCIRC - ssh_loglevel_verbose
+# # NCIRC - ssh_deny_root_logins
+# # NCIRC - ssh_disable_hostbased
+# # NCIRC - ssh_deny_empty_passwords
+# # NCIRC - sshd_banner (ansible)
+#
+
+  - name: Set SSH Protocol to 2 (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^Protocol " line="Protocol 2"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+
+  - name: Set LogLevel to INFO (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^LogLevel "
+      line="LogLevel INFO"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set Permissions on /etc/ssh/sshd_config (Scored)
+    file: >
+      path=/etc/ssh/sshd_config
+      owner=root
+      group=root
+      mode=0600
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Disable SSH X11 Forwarding (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^X11Forwarding "
+      line="X11Forwarding no"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set SSH MaxAuthTries to 4 or Less (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^MaxAuthTries "
+      line="MaxAuthTries 4"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set SSH IgnoreRhosts to Yes (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^IgnoreRhosts "
+      line="IgnoreRhosts yes"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set SSH HostbasedAuthentication to No (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^HostbasedAuthentication "
+      line="HostbasedAuthentication no"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Disable SSH Root Login (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^PermitRootLogin "
+      line="PermitRootLogin no"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set SSH PermitEmptyPasswords to No (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^PermitEmptyPasswords "
+      line="PermitEmptyPasswords no"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Do Not Allow Users to Set Environment Options (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^PermitUserEnvironment "
+      line="PermitUserEnvironment no"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Use Only Approved Cipher in Counter Mode (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^Ciphers "
+      line="Ciphers aes128-ctr,aes192-ctr,aes256-ctr"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set Idle Timeout Interval for User Login (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^ClientAliveInterval "
+      line="ClientAliveInterval 600"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set Idle Timeout Interval for User Login (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^ClientAliveCountMax "
+      line="ClientAliveCountMax 0"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Disable RhostsRSAAuthentication (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^RhostsRSAAuthentication no"
+      line="RhostsRSAAuthentication no"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set SSH Port 22 (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^Port 22"
+      line="Port 22"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set sshd banner (Scored)
+    lineinfile: >
+      dest=/etc/ssh/sshd_config
+      regexp="^Banner"
+      line="Banner /etc/issue.net"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+
+  - name: Set ssh client protocol (Scored)
+    lineinfile: >
+      dest=/etc/ssh/ssh_config
+      regexp="^        Protocol 2"
+      insertafter="Host \*"
+      line="        Protocol 2"
+    notify: Reload sshd
+    become: yes
+    become_method: sudo
+    tags:
+      - ssh_client
+
+
+
+

@@ -1,0 +1,90 @@
+---
+
+  - name: Uninstall rsyslog
+    yum: name="rsyslog" state=absent
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Install new syslog-ng
+    yum: name=syslog-ng state=installed
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Copy log modules configuration
+    copy: src=modules.conf dest=/etc/syslog-ng/modules.conf owner=root group=root
+    notify:
+      - restart syslog-ng
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Create syslog-ng certificate directory
+    file: path=/etc/syslog-ng/etc/ca.d/ state=directory owner=root group=root
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Copy syslog-ng CA certificates
+    copy: src="{{ inventory_dir }}/certificates/rsyslog/ca.pem" dest=/etc/syslog-ng/etc/ca.d/ca.pem owner=root group=root
+    notify:
+      - restart syslog-ng
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Create CA certificate hash
+    shell: openssl x509 -noout -hash -in /etc/syslog-ng/etc/ca.d/ca.pem 
+    register: ca_cert_hash
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Create CA certificate symlink
+    file: src=/etc/syslog-ng/etc/ca.d/ca.pem dest=/etc/syslog-ng/etc/ca.d/{{ ca_cert_hash.stdout }}.0 state=link
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+
+  - name: Create syslog-ng snippets directory
+    file: path=/etc/syslog-ng/syslog-ng.d state=directory owner=root group=root
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Set syslog-ng configuration
+    template: src=syslog-ng.conf.j2 dest=/etc/syslog-ng/syslog-ng.conf owner=root group=root
+    notify:
+      - restart syslog-ng
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Ensure syslog-ng is running
+    service: name=syslog-ng state=started enabled=yes
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+    ignore_errors: yes
+
+###########################
+## Log rotation
+############################
+
+  - name: Copy logrotate configuration
+    template: src=logrotate.conf.j2 dest=/etc/logrotate.conf
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Install syslog logrotate configuration
+    copy: src=syslog.logrotate dest=/etc/logrotate.d/syslog owner=root group=root mode=0644
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+

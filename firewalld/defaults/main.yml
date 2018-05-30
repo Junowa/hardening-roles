@@ -1,0 +1,39 @@
+---
+# group_vars/all
+fw_zones: 
+  - name: COM
+    ports: 
+      - 22/tcp #ssh
+  - name: APP
+    ports: []
+  
+#group_vars/mlf || group_vars/tna
+### MLF
+fw_subnets:
+  - name: COM
+    subnets: 
+      - "10.10.10.0/24"
+      - "{{ RSX }}.36.0/24"
+      - "{{ RSX }}.37.0/24"
+      - "{{ RSX }}.38.0/24"
+  - name: APP
+    subnets: 
+      - "{{ RSX }}.40.0/24"
+      - "{{ RSX }}.41.0/24"
+      - "{{ RSX }}.42.0/24"
+      - "{{ RSX }}.48.0/24"
+
+### TNA
+#fw_subnets:
+#  - name: COM
+#    subnets: 
+#      - "{{ RSX }}.100.0/24"
+#      - "{{ RSX }}.101.0/24"
+#      - "{{ RSX }}.102.0/24"
+#  - name: APP
+#    subnets: 
+#      - "{{ RSX }}.104.0/24"
+#      - "{{ RSX }}.105.0/24"
+#      - "{{ RSX }}.106.0/24"
+#      - "{{ RSX }}.112.0/24"
+

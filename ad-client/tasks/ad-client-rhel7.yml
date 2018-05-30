@@ -1,0 +1,92 @@
+--- 
+- name: copy pexpect rpm on host
+  copy:
+    src: python-pexpect-3.3-1mgc30.noarch.rpm
+    dest: /tmp/python-pexpect-3.3-1mgc30.noarch.rpm
+  tags: ad-client
+
+- name: install required packages
+  yum: name={{ item }} state=present
+  with_items:
+    - realmd
+    - sssd
+    - oddjob
+    - oddjob-mkhomedir
+    - adcli
+    - samba-common
+    - samba-common-tools
+    - ntpdate
+    - ntp
+    - pamtester
+    - /tmp/python-pexpect-3.3-1mgc30.noarch.rpm
+  become: yes
+  become_method: sudo
+  tags: ad-client
+
+#- name: install pexpect using pip
+#  shell: /bin/bash -c "pip install pexpect"
+#  #become: yes
+#  b#ecome_method: sudo
+#
+- name: copy realmd conf file
+  template: src=realmd.conf.j2
+            dest=/etc/realmd.conf
+  become: yes
+  become_method: sudo
+  tags: ad-client
+  
+- name: check if domain is already joined
+  shell: realm list
+  become: yes
+  become_method: sudo
+  register: realm_result
+  tags: ad-client
+
+- name: Join AD Domain
+  expect: 
+    command: /bin/bash -c "realm join --user={{ domain_admin_username }}@{{ domains[0] }} {{ domains[0] }}
+    responses: 
+      Password for: "{{ domain_admin_password }}"
+  become: yes
+  become_method: sudo
+  when: (realm_result.stdout_lines[0] is not defined) or (realm_result.stdout_lines[0] is defined and realm_result.stdout_lines[0] != "{{ domains[0] }}")
+  tags: ad-client
+
+- name: modify sssd.conf
+  template: src=sssd.conf.j2
+            dest=/etc/sssd/sssd.conf
+  become: yes
+  become_method: sudo
+  tags: ad-client
+
+- name: modify nsswitch.conf
+  template: src=nsswitch.conf.j2
+            dest=/etc/nsswitch.conf
+  become: yes
+  become_method: sudo
+  tags: ad-client
+
+- name: restart sssd service
+  service: name=sssd
+           state=restarted
+  become: yes
+  become_method: sudo
+  tags: ad-client
+
+- name: add sudo rights
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^%{{ item }} ALL='
+    line: '%{{ item }}  ALL=(ALL)  ALL'
+    validate: 'visudo -cf %s'
+  with_items: "{{ sudo_groups }}"
+  become: yes
+  become_method: sudo
+  tags: ad-client
+
+- name: Remove pexpect rpm on host
+  file:
+    path: /tmp/python-pexpect-3.3-1mgc30.noarch.rpm
+    state: absent
+  tags: ad-client

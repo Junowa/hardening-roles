@@ -1,0 +1,32 @@
+---
+
+
+sssd_enabled: 'yes'
+
+disable_services_list:
+  - avahi_daemon
+  - apmd
+  - nfs                                                                                            
+  - nfslock                                                                                   
+  - rpcgssd                                                                                    
+  - rpcimapd                                                                                 
+  - netfs                                                                                        
+  - portmap                                                                                    
+  - cups                                                                                         
+  - firstboot                                                                               
+  - gpm                                                                                           
+  - haldaemon                                                                              
+  - hidd
+  - isdn
+  - kdump                                                                                        
+  - kudzu
+  - mcstrans                                                                                  
+  - mdmonitor                                                                                
+  - pcscd                                                                                       
+  - readahead_early                                                            
+  - readahead_later                                                                    
+  - rhnsd 
+  - sendmail                                                                                  
+  - yum_updatesd                                                                           
+  - xfs
+

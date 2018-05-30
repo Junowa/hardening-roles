@@ -1,0 +1,72 @@
+---
+
+  - name: Install rsyslog-gnutls
+    yum: name=rsyslog-gnutls state=installed
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Create rsyslog protected directory
+    file: path=/rsyslog/protected/ state=directory owner=root group=root
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Copy syslog CA certificate
+    copy: src="{{ inventory_dir }}/certificates/rsyslog/ca.pem" dest=/rsyslog/protected/ca.pem owner=root group=root
+    notify:
+      - restart rsyslog
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Copy syslog certificates
+    copy: src="{{ inventory_dir }}/certificates/rsyslog/servercert.pem" dest=/rsyslog/protected/servercert.pem owner=root group=root
+    notify:
+      - restart rsyslog
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Copy syslog private key
+    copy: src="{{ inventory_dir }}/certificates/rsyslog/ca.pem" dest=/rsyslog/protected/serverkey.pem owner=root group=root
+    notify:
+      - restart rsyslog
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Set syslog configuration
+    template: src=rsyslog.conf.j2 dest=/etc/rsyslog.conf owner=root group=root
+    notify:
+      - restart rsyslog
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Ensure rsyslog is running
+    service: name=rsyslog state=started enabled=yes
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+    ignore_errors: yes
+
+###########################
+## Log rotation
+############################
+
+  - name: Copy logrotate configuration
+    template: src=logrotate.conf.j2 dest=/etc/logrotate.conf
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Install syslog logrotate configuration
+    copy: src=syslog.logrotate dest=/etc/logrotate.d/syslog owner=root group=root mode=0644
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+

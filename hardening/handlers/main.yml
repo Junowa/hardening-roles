@@ -1,0 +1,7 @@
+---
+  - name: Reload sshd
+    shell: name=sshd state=reloaded
+    register: result
+    become: yes
+    become_method: sudo
+  

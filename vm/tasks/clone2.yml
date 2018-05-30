@@ -1,0 +1,41 @@
+---
+
+# Force gateway on COM iface
+  - set_fact:
+      vm_networks: "{{ vm_networks|default([]) + [ {
+          'name': item.net_name, 
+          'ip': item.ip_address,
+          'netmask': ( ('0.0.0.0/'~(item.prefix)) | join('') | ipaddr('netmask') ),
+          'gateway': item.gateway_custom |default('')
+           } ] }}"
+    when: item.device_id is defined and item.device_id == 0
+    with_items: 
+      - "{{ networks }}"
+
+# Ignore gateway for other ifaces
+  - set_fact:
+      vm_networks: "{{ vm_networks|default([]) + [ {
+          'name': item.net_name, 
+          'ip': item.ip_address,
+          'netmask': ( ('0.0.0.0/'~(item.prefix)) | join('') | ipaddr('netmask') ),
+           } ] }}"
+    when: item.device_id is defined and item.device_id != 0
+    with_items: 
+      - "{{ networks }}"
+
+  - name: Clone2 and customize "{{ inventory_hostname }}"
+    vmware_guest:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      #cluster: "{{ zone }}"
+      esxi_hostname: "{{ compute }}" 
+      template: "{{ template }}-{{ zone | regex_replace(' ') }}"
+      name: "{{ inventory_hostname }}"
+      hardware:
+        memory_mb: "{{ ram }}" 
+        num_cpus: "{{ vcpus }}"
+      networks: "{{ vm_networks }}"
+    delegate_to: localhost

@@ -1,0 +1,9 @@
+
+  - name: Disable time synchro in vmx
+    shell: export LD_LIBRARY_PATH=/opt/shibboleth/lib64/:$LD_LIBRARY_PATH             
+           && /usr/bin/powershell -NonInteractive {{ role_path }}/files/esxi_vmx_disable_timesynchro.ps1 {{ vcenter_hostname }} {{ vcenter_username }} {{ vcenter_password }} {{ inventory_hostname }}
+    delegate_to: localhost
+    register: esxi_vmx_disable_timesynchro
+    failed_when: esxi_vmx_disable_timesynchro.stderr
+    tags:
+      - vmx_disable_timesynchro

@@ -1,0 +1,31 @@
+###########################
+# RedHat6 Licenses offline 
+###########################
+
+  - name: Check licenses files
+    local_action: stat path={{ inventory_dir }}/licenses/{{ inventory_hostname }}_license.pem
+    register: license_file
+
+  - name: Add licence certificate (offline mode)
+    copy: src={{ inventory_dir }}/licenses/{{ inventory_hostname }}_license.pem 
+          dest=/tmp/{{ inventory_hostname }}_license.pem
+          owner=root
+          group=root
+          mode=0644
+    become: yes
+    become_method: sudo 
+    when: (license_file.stat.exists == True) and
+          (ansible_distribution == "RedHat")
+
+  - name: Disabling subscription manager repo (offline mode)
+    shell: subscription-manager config --rhsm.manage_repos=0
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat"
+                
+  - name: Subscribe (offline mode)
+    shell: subscription-manager import --certificate=/tmp/{{ inventory_hostname }}_license.pem
+    become: yes
+    become_method: sudo
+    when: (license_file.stat.exists == True) and
+          (ansible_distribution == "RedHat")

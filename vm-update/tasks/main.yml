@@ -1,0 +1,53 @@
+---
+
+# Power off before customizing
+  - vmware_guest_facts:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      name: "{{ vmname }}"
+    register: facts
+    delegate_to: localhost
+
+  - name: Power off  "{{ vmname }}"
+    vmware_guest:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      name: "{{ vmname }}"
+      state: poweredoff
+    when: facts.instance.hw_power_status == "poweredOn"
+    delegate_to: localhost
+
+# Reconfigure
+  - name: Reconfigure vcpu vram for  "{{ vmname }}"
+    vmware_guest:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      name: "{{ vmname }}"
+      hardware:
+        memory_mb: "{{ ram }}" 
+        num_cpus: "{{ vcpus }}"
+      state: present
+      wait_for_ip_address: yes
+    delegate_to: localhost
+
+# Power on
+  - name: Power on  "{{ vmname }}"
+    vmware_guest:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      name: "{{ vmname }}"
+      state: poweredon
+      wait_for_ip_address: yes
+    delegate_to: localhost

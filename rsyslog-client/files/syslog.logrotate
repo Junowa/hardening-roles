@@ -1,0 +1,19 @@
+/var/log/messages
+/var/log/secure
+{
+    rotate 5
+    hourly
+    size 100M
+    compress
+}
+
+/var/log/boot.log
+/var/log/cron
+/var/log/maillog
+/var/log/spooler
+{
+    rotate 5
+    hourly
+    size 20M
+    compress
+}

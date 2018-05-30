@@ -1,0 +1,186 @@
+---
+
+
+### GC-LINUX-R16 - configuration shadow en sha512
+
+  - name: Ensure authconfig package is installed
+    yum:
+      name: authconfig
+      state: present
+    become: yes
+    become_method: sudo
+
+  - name: Upgrade Password Hashing Algorithm to SHA-512
+    shell: 'authconfig --test | grep hashing'
+    register: password_hash_algorithm
+    become: yes
+    become_method: sudo
+
+  - name: Upgrade Password Hashing Algorithm to SHA-512
+    shell: authconfig --passalgo=sha512 --update
+    when: '"sha512" not in password_hash_algorithm.stdout'
+    become: yes
+    become_method: sudo
+
+ 
+# Password Policy
+# GC-LINUX-R17 - configuration shadow uniquement
+# Set Last Login/access notification
+# Max password login attempts per session
+# GC-LINUX-R18 - Mot de passe robuste (14 caracteres, 3 tentatives, pas de crédits)
+# GC-LINUX-R19 - Mot de passe limités en durée de vie
+# GC-LINUX-R28 - restreindre les utilisateurs de su
+# NCIRC - restrict_su
+
+  - name: Configure PAM (system-auth)
+    template: >
+      src=etc/pam.d/system-auth-ac.j2
+      dest=/etc/pam.d/system-auth-ac
+      mode=0644
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - file:
+      src: /etc/pam.d/system-auth-ac
+      dest: /etc/pam.d/system-auth
+      state: link
+      force: yes
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Configure PAM (system-auth)
+    copy: >
+      src=etc/pam.d/system-auth_rhel6
+      dest=/etc/pam.d/system-auth
+      mode=0644
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6"
+
+  - name: Configure PAM (password-auth)
+    template: >
+      src=etc/pam.d/password-auth-ac.j2
+      dest=/etc/pam.d/password-auth-ac
+      mode=0644
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - file:
+      src: /etc/pam.d/password-auth-ac
+      dest: /etc/pam.d/password-auth
+      state: link
+      force: yes
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Configure PAM (password-auth)
+    copy: >
+      src=etc/pam.d/password-auth_rhel6
+      dest=/etc/pam.d/password-auth
+      mode=0644
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "6"
+
+
+# NCIRC - password_history
+
+  - name: Set Password Expiration Days
+    lineinfile: >
+      backup=yes
+      state=present
+      dest=/etc/login.defs
+      backrefs=yes
+      regexp="^PASS_MAX_DAYS\s+"
+      line="PASS_MAX_DAYS\t90"
+    become: yes
+    become_method: sudo
+
+  - name: Set Password Change Minimum Number of Days
+    lineinfile: >
+      backup=yes
+      state=present
+      dest=/etc/login.defs
+      backrefs=yes
+      regexp="^PASS_MIN_DAYS\s+"
+      line="PASS_MIN_DAYS\t7"
+    become: yes
+    become_method: sudo
+
+  - name: Set Password Expiring Warning Days
+    lineinfile: >
+      backup=yes
+      state=present
+      dest=/etc/login.defs
+      backrefs=yes
+      regexp="^PASS_WARN_AGE\s+"
+      line="PASS_WARN_AGE\t14"
+    become: yes
+    become_method: sudo
+
+
+# NCIRC - password_quality
+
+  - name: Configure PAM (password-auth)
+    copy: >
+      src=etc/security/pwquality.conf
+      dest=/etc/security/pwquality.conf
+      mode=0644
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+# NCIRC - shell_inactivity
+# echo -e "TMOUT=600\nreadonly TMOUNT\nexport TMOUNT" > /etc/profile.d/tmount.sh
+  - name: Autologout shell inactivity
+    copy: >
+      src=etc/profile.d/tmount.sh
+      dest=/etc/profile.d/tmount.sh
+      mode=0644
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    
+# Restrict tty access
+  - name: Restrict tty access
+    copy: >
+      src=etc/securetty
+      dest=/etc/securetty
+      mode=0600
+      owner=root
+      group=root
+    become: yes
+    become_method: sudo
+    tags:
+      - securetty
+
+# Restrict su access
+  - name: Restrict su access to wheel group 
+    lineinfile:
+      dest: /etc/pam.d/su
+      regexp: '^#auth(.*)required(.*)pam_wheel.so use_uid$'
+      line: 'auth           required        pam_wheel.so use_uid'
+    become: yes
+    become_method: sudo
+    tags:
+      - suaccess

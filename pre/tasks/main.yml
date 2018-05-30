@@ -1,0 +1,35 @@
+
+  - name: Check release file
+    local_action: stat path={{ inventory_dir }}/RELEASE
+    register: release_file
+
+  - name: Copy release in {{ ansible_env.HOME }}
+    copy: src={{ inventory_dir }}/RELEASE
+          dest={{ ansible_env.HOME }}/ansible-system.release
+          owner=root
+          group=root
+          mode=0400
+    become: yes
+    become_method: sudo 
+    when: release_file.stat.exists == True
+
+  - name: Remove ens192
+    file: name=/etc/sysconfig/network-scripts/ifcfg-ens192 state=absent
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name : update admloc password
+    user:
+      name: admloc
+      password: "{{ admloc_password }}"
+    become: yes
+    become_method: sudo
+
+  - name: create ansible /srv/tmp/
+    file:
+      path: /srv/tmp
+      state: directory
+      mode: 0777
+    become: yes
+    become_method: sudo

@@ -1,0 +1,4 @@
+---
+
+  - include: roles/vm/tasks/reconfig_vcenter.yml
+    when: vcenter

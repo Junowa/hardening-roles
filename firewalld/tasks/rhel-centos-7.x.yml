@@ -1,0 +1,60 @@
+---
+- name: ensure firewalld is well installed
+  yum: name=firewalld state=present
+  become: yes
+  become_method: sudo
+
+- name: enable firewalld
+  service: name=firewalld state=started enabled=yes
+  become: yes
+  become_method: sudo
+
+- name: restart firewalld (due to interface changing name when clonning)
+  service: name=firewalld state=restarted enabled=yes
+  become: yes
+  become_method: sudo
+
+- name: set drop as default zone
+  shell: firewall-cmd --set-default-zone drop
+  become: yes
+  become_method: sudo
+
+- name: create zones
+  shell: firewall-cmd --permanent --new-zone {{ item.name }}
+  with_items: "{{ fw_zones }}"
+  become: yes
+  become_method: sudo
+  ignore_errors: yes
+
+- name: add ports to zones
+  firewalld: 
+    port: "{{ item.1 }}"
+    permanent: true
+    state: enabled
+    zone: "{{ item.0.name }}"
+  with_subelements:
+    - "{{ fw_zones }}"
+    - ports
+  become: yes
+  become_method: sudo
+  when: item.1 is defined
+
+- name: add subnets to zones
+  firewalld: 
+    source: "{{ item.1 }}"
+    permanent: true
+    state: enabled
+    zone: "{{ item.0.name }}"
+  with_subelements:
+    - "{{ fw_subnets }}"
+    - subnets
+  become: yes
+  become_method: sudo
+  when: item.1
+
+- name: restart firewalld
+  service: name=firewalld state=restarted enabled=yes
+  become: yes
+  become_method: sudo
+
+

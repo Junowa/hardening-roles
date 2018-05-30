@@ -1,0 +1,172 @@
+---
+# /etc/sysctl.conf
+# # NCIRC - network_disable_ip_forwarding
+# # NCIRC - network_disable_source_routing
+# # NCIRC - network_accept_redirects
+# # NCIRC - network_log_martians
+# # NCIRC - network_ignore_broadcast
+# # NCIRC - network_ignore_bogus_error_messages
+# # NCIRC - network_tcp_syncookies
+# # NCIRC - network_rp_filter
+# # NCIRC - network_rp_filter
+# # NCIRC - disable_ipv6
+
+  - name: Disable IP Forwarding (Scored)
+    sysctl: >
+      name=net.ipv4.ip_forward
+      value=0
+      state=present
+    become: yes
+    become_method: sudo
+
+  - name: Disable Send Packet Redirects (Scored)
+    sysctl: >
+      name=net.ipv4.conf.all.send_redirects
+      value=0
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Disable Send Packet Redirects (Scored)
+    sysctl: >
+      name=net.ipv4.conf.default.send_redirects
+      value=0
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Disable Source Routed Packet Acceptance (Scored)
+    sysctl: >
+      name=net.ipv4.conf.all.accept_source_route
+      value=0
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Disable Source Routed Packet Acceptance (Scored)
+    sysctl: >
+      name=net.ipv4.conf.default.accept_source_route
+      value=0
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Disable ICMP Redirect Acceptance (Scored)
+    sysctl: >
+      name=net.ipv4.conf.all.accept_redirects
+      value=0
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Disable ICMP Redirect Acceptance (Scored)
+    sysctl: >
+      name=net.ipv4.conf.default.accept_redirects
+      value=0
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Disable ICMP Redirect Acceptance (Scored)
+    sysctl: >
+      name=net.ipv4.conf.default.secure_redirects
+      value=0
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Disable ICMP Redirect Acceptance (Scored)
+    sysctl: >
+      name=net.ipv4.conf.all.secure_redirects
+      value=0
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Log Suspicious Packets (Scored)
+    sysctl: >
+      name=net.ipv4.conf.all.log_martians
+      value=1
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Log Suspicious Packets (Scored)
+    sysctl: >
+      name=net.ipv4.conf.default.log_martians
+      value=1
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Enable Ignore Broadcast Requests (Scored)
+    sysctl: >
+      name=net.ipv4.icmp_echo_ignore_broadcasts
+      value=1
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Enable Bad Error Message Protection (Scored)
+    sysctl: >
+      name=net.ipv4.icmp_ignore_bogus_error_responses
+      value=1
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Enable TCP SYN Cookies (Scored)
+    sysctl: >
+      name=net.ipv4.tcp_syncookies
+      value=1
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Enable Reverse Path validation (Scored)
+    sysctl: >
+      name=net.ipv4.conf.all.rp_filter
+      value=1
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - name: Enable Reverse Path validation (Scored)
+    sysctl: >
+      name=net.ipv4.conf.default.rp_filter
+      value=1
+      state=present
+      ignoreerrors=true
+    become: yes
+    become_method: sudo
+
+  - stat:
+      path=/usr/lib/modules/{{ ansible_kernel }}/kernel/net/wireless
+    register: wireless_path
+    become: yes
+    become_method: sudo
+    tags:
+      - disable_wireless
+
+  - name: Disable_wireless
+    shell: mv /usr/lib/modules/{{ ansible_kernel }}/kernel/net/wireless /usr/lib/modules/{{ ansible_kernel }}/kernel/net/wireless.disabled
+    become: yes
+    become_method: sudo
+    when: wireless_path.stat.exists
+    tags:
+      - disable_wireless
+

@@ -1,0 +1,58 @@
+---
+
+  - name: 'Remove old rsync'
+    cron: name="Weekly rsync"
+          state=absent
+    become: yes
+    become_method: sudo
+    tags:
+      - rsync
+
+  - name: 'add rsync to crontab (every Tuesday at 00:00)'
+    cron: name="Weekly rsync"
+          minute="0"
+          hour="0"
+          weekday="2"
+          job="rsync -avz --delete --exclude={{ rsync_exclude }} {{ rsync_remote }} {{ rsync_local }} 2&>1 | logger -t rsync"
+    become: yes
+    become_method: sudo
+    tags:
+      - rsync
+
+  - name: Set exec /home Partition
+    mount: >
+      name="/home"
+      src={{ item.device }}
+      state=mounted
+      fstype={{ item.fstype }}
+      opts="exec"
+    when: item.mount == "/home"
+    with_items: "{{ ansible_mounts }}"
+    become: yes
+    become_method: sudo
+    tags:
+      - rsync
+
+
+  - name: '{{ rsync_remote }}'
+    shell: rsync -avz --delete --exclude={{ rsync_exclude }} {{ rsync_remote }} {{ rsync_local }} 2&>1 | logger -t rsync
+    async: 600
+    poll: 5
+    become: yes
+    become_method: sudo
+    tags:
+      - rsync
+
+  - name: Set nodev,nosuid,noexec /home Partition
+    mount: >
+      name="/home"
+      src={{ item.device }}
+      state=mounted
+      fstype={{ item.fstype }}
+      opts="nodev,nosuid,noexec"
+    when: item.mount == "/home"
+    with_items: "{{ ansible_mounts }}"
+    become: yes
+    become_method: sudo
+    tags:
+      - rsync

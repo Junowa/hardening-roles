@@ -1,0 +1,46 @@
+---
+
+# Firewall (cf. role iptables)
+## TODO GC-LINUX-R44 - Configuration iptables (default in kickstart)
+## TODO GC-LINUX-R47 - Configuration iptables (default in kickstart)
+
+# SELinux
+## TODO NCIRC - enable_linux (default in kickstart)
+## TODO NCIRC - iptables_policy (default in kickstart)
+
+  - include: tasks/filesystem_hardening.yml
+    tags:
+      - filesystem_hardening
+
+  - include: tasks/progexec_hardening.yml
+    tags:
+      - progexec_hardening
+
+  - include: tasks/boot_hardening.yml
+    tags:
+      - boot_hardening
+
+# Packages configuration
+# Core group, (perl dependencies for wmware-tools)
+# GC-LINUX-R14 - installation des packages strictement nécessaires: groupe @core+netttoyage (default in kickstart)
+# GC-LINUX-R46 - Nettoyage des services à authentification faible (default in kickstart)
+
+  - include: tasks/network_hardening.yml
+    tags:
+      - network_hardening
+
+# System Access, Authentication, Authorization
+
+  - include: tasks/sshd_hardening.yml
+    tags:
+      - sshd_hardening
+
+  - include: tasks/authentication_hardening.yml
+    tags:
+      - authentication_hardening
+
+# Banners
+#
+  - include: tasks/banner_hardening.yml
+    tags:
+      - banner_hardening

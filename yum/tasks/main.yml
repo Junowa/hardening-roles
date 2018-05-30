@@ -1,0 +1,119 @@
+---
+  ###########################
+  # Yum client configuration
+  ###########################
+
+  - name: Set yum configuration
+    template: src=yum.conf.j2 
+              dest=/etc/yum.conf
+    become: yes
+    become_method: sudo 
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+    tags:
+      - yum-client
+
+  - name: Add EPEL GPG key
+    copy: src=RPM-GPG-KEY-EPEL-{{ ansible_distribution_major_version }}
+          dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-{{ ansible_distribution_major_version }}
+          owner=root
+          group=root
+          mode=0644
+    become: yes
+    become_method: sudo 
+    when: (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+          and (ansible_distribution_major_version == "7" or ansible_distribution_major_version == "6")
+    tags:
+      - yum-client
+
+  - name: Disable fastest mirror plugin
+    lineinfile: dest=/etc/yum/pluginconf.d/fastestmirror.conf regexp=^enabled line='enabled = 0'
+    become: yes
+    become_method: sudo 
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+    tags:
+      - yum-client
+
+  - name: Cleaning repo file
+    file: path=/etc/yum.repos.d/{{ item }} state=absent
+    with_items:
+      - CentOS-CR.repo
+      - CentOS-fasttrack.repo
+      - CentOS-Sources.repo
+      - CentOS-Base.repo
+      - CentOS-Debuginfo.repo
+      - CentOS-Media.repo
+      - CentOS-Vault.repo
+      - rhel-iso.repo
+      - epel.repo
+    become: yes
+    become_method: sudo 
+    tags:
+      - yum-client
+
+  - name: Copy repo conf file
+    template: src=centos/CentOS-Base.repo.j2 dest=/etc/yum.repos.d/CentOS-Base.repo owner=root group=root mode=0644
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" 
+          and (ansible_distribution_major_version == "7")
+    tags:
+      - yum-client
+
+  - name: Copy repo conf file
+    template: src=rhel/rhel{{ansible_distribution_version}}-base.repo.j2 dest=/etc/yum.repos.d/rhel-base.repo owner=root group=root mode=0644
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "RedHat"
+          and (ansible_distribution_version == "6.5" or ansible_distribution_version == "7.2"
+          or ansible_distribution_version == "7.3" or ansible_distribution_version == "7.4")
+    tags:
+      - yum-client
+
+  - name: Copy epel repo
+    template: src=epel/epel{{ ansible_distribution_major_version}}.repo.j2 dest=/etc/yum.repos.d/epel.repo owner=root group=root mode=0644
+    become: yes
+    become_method: sudo 
+    when: (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+          and (ansible_distribution_major_version == "7" or ansible_distribution_major_version == "6")
+    tags:
+      - yum-client
+
+  - name: yum init
+    command: yum {{ item }}
+    with_items:
+      - clean all
+    when: ansible_distribution == "CentOS"
+          and (ansible_distribution_major_version == "7")
+    tags:
+      - yum-client
+
+  
+
+  ##############################
+  # Upgrade system
+  ##############################
+  # WARNING !!!!!! Upgrade done by applicative installer
+# 
+#  - name: Upgrade system
+#    yum: name=* state=latest exclude="kernel* centos-release*"
+#    become: yes
+#    become_method: sudo
+#    when: ansible_distribution == "CentOS" and ansible_distribution_version == "7.2.11"
+#    tags:
+#      - yum-upgrade
+#
+  ##############################
+  # Install additional packages
+  ##############################
+
+  - name: Install additional package
+    yum: name={{ item }} state=latest update_cache=yes
+    become: yes
+    become_method: sudo
+    with_items: 
+      - vim
+      - bind-utils  
+      - yum-utils
+      #- setroubleshoot-server
+    ignore_errors: yes
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"

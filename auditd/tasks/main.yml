@@ -1,0 +1,39 @@
+---
+
+  - name: Set auditd configuration
+    copy: src=auditd.conf dest=/etc/audit/auditd.conf owner=root group=root mode=0640
+    become: yes
+    become_method: sudo
+    notify:
+     - restart auditd
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Set audit rules
+    template: src=audit.rules.j2 dest=/etc/audit/rules.d/system.rules owner=root group=root mode=0640
+    become: yes
+    become_method: sudo
+    notify:
+     - restart auditd
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Enable syslog plugin
+    copy: src=syslog.conf
+          dest=/etc/audisp/plugins.d/syslog.conf
+          owner=root 
+          group=root
+          mode=0640
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")
+
+  - name: Enable auditing
+    service: name=auditd  
+             state=started 
+             enabled=yes
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "7")

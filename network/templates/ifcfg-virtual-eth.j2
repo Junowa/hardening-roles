@@ -1,0 +1,24 @@
+# Universal properties
+TYPE=Ethernet
+DEVICE=eth{{ item.virtual_id }}
+ONBOOT=yes
+NM_CONTROLLED=no
+USERCTL=no
+PEERDNS=no
+IPV6INIT=no
+IPV6_AUTOCONF=no
+# Static or DHCP
+{% if item.boot_protocol == "dhcp" %}
+BOOTPROTO=dhcp
+DHCP_HOSTNAME=`hostname`
+{% else %}
+BOOTPROTO=none
+IPADDR={{ item.ip_address }}
+PREFIX={{ item.prefix }}
+MTU={{ item.mtu }}
+{% if 'APP' in item.int_name %}
+{% if item.gateway is defined %}
+GATEWAY={{ item.gateway }}
+{% endif %}
+{% endif %}
+{% endif %}

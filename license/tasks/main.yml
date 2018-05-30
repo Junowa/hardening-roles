@@ -1,0 +1,8 @@
+###########################
+# RedHat Licenses 
+###########################
+  - include: tasks/rhel-license.yml
+    when: ansible_distribution == "RedHat"
+    tags: 
+      - licenses
+

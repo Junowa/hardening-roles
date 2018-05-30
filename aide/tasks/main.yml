@@ -1,0 +1,40 @@
+---
+  - name: AIDE installation
+    yum: name=aide state=latest
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: AIDE configuration
+    copy: src=../templates/aide.conf.j2 dest=/etc/aide.conf owner=root group=root mode=0400
+    become: yes
+    become_method: sudo
+
+  - name: AIDE Database initialization
+    command: aide --init
+    become: yes
+    become_method: sudo
+
+  - name: renommer la nouvelle base de données
+    command: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+    become: yes
+    become_method: sudo
+
+  - name: Add AIDE to crontab (daily scan)
+    cron: name="Daily AIDE scan" 
+          minute="0" 
+          hour="*/6" 
+          job="/usr/sbin/aide --check"
+    become: yes
+    become_method: sudo
+
+  - name: Install AIDE rsyslog.d configuration
+    copy: src=etc/rsyslog.d/aide.conf dest=/etc/rsyslog.d/aide.conf owner=root group=root mode=0644
+    notify: restart rsyslog
+    become: yes
+    become_method: sudo
+
+  - name: Install AIDE logrotate configuration
+    copy: src=aide.logrotate dest=/etc/logrotate.d/aide owner=root group=root mode=0644
+    become: yes
+    become_method: sudo

@@ -1,0 +1,53 @@
+---
+
+  - name: Create Additional Volume Groups
+    lvg: vg={{ item.vg_name }} pvs={{ item.vg_disk }}
+    become: yes
+    become_method: sudo
+    when: item.vg_name != "vg_root" 
+    with_items: '{{ vg_list }}'
+    ignore_errors: yes 
+
+  - name: Update Volume Groups
+    lvg: vg={{ item.vg_name }} pvs=/dev/sda3,{{ item.vg_disk }}
+    become: yes
+    become_method: sudo
+    when: item.vg_name == "vg_root" 
+    with_items: '{{ vg_list }}'
+    ignore_errors: yes 
+
+  - name: Create Additional Logical Volumes
+    lvol: vg={{ item.0.vg_name }} lv={{ item.1.lv_name }} size={{ item.1.lv_size }}
+    become: yes
+    become_method: sudo
+    with_subelements:
+      - '{{ vg_list }}'
+      - lv_list
+    ignore_errors: yes 
+
+  - name: Create Additional Filesystems
+    filesystem: fstype={{ item.1.lv_fstype }} dev=/dev/{{ item.0.vg_name }}/{{ item.1.lv_name }}
+    become: yes
+    become_method: sudo
+    when: item.0.vg_name != "vg_root" 
+    with_subelements:
+      - '{{ vg_list }}'
+      - lv_list
+
+  - name: Update Filesystems
+    filesystem: fstype={{ item.1.lv_fstype }} dev=/dev/{{ item.0.vg_name }}/{{ item.1.lv_name }} resizefs=yes
+    become: yes
+    become_method: sudo
+    when: item.0.vg_name == "vg_root" 
+    with_subelements:
+      - '{{ vg_list }}'
+      - lv_list
+
+  - name: Mount Additional Filesytems
+    mount: fstype={{ item.1.lv_fstype }} name={{ item.1.lv_mountpoint }} src=/dev/{{ item.0.vg_name }}/{{ item.1.lv_name }} state=mounted
+    become: yes
+    become_method: sudo
+    #when: item.0.vg_name != "vg_root" 
+    with_subelements:
+      - '{{ vg_list }}'
+      - lv_list

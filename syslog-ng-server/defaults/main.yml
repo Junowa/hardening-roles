@@ -1,0 +1,11 @@
+
+syslog_server_address: "192.168.0.1"
+syslog_server_tls_port: 9102
+syslog_server_udp_port: 514
+
+syslog_server_key: "private.key"
+syslog_server_cert: "cert.pem"
+syslog_server_ca_dir: "~"
+
+syslog_local_output: "/var/log/syslog_local_output"
+

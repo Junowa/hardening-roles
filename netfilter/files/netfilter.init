@@ -1,0 +1,263 @@
+#!/bin/bash
+#
+# netfilter	Start Netfilter firewall
+#
+# chkconfig: 2345 08 92
+# description:	Starts, stops and saves Netfilter firewall
+#
+# config: /etc/sysconfig/netfilter
+# config: /etc/sysconfig/netfilter.d
+#
+### BEGIN INIT INFO
+# Provides: netfilter
+# Required-Start: $network $local_fs
+# Required-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: start and stop Netfilter firewall
+# Description: Script d'initialisation du firewall Netfilter
+### END INIT INFO
+
+# Author: Grégory KIRIJEAN <gregory.kirijean@thalesgroup.com>
+#set -x
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC=netfilter
+NAME=netfilter
+DAEMON=/etc/init.d/$NAME
+SCRIPTNAME=/usr/libexec/netfilter/netfilter.init
+. /etc/default/$NAME
+
+ipt='/sbin/iptables'
+
+# only usable for root
+[ $EUID = 0 ] || exit 4
+
+if [ ! -x $ipt ]; then
+    echo -n $"${$NAME}: ${ipt} does not exist."; warning; echo
+    exit 5
+fi
+
+#[ -x $DAEMON ] || exit 0
+
+debuglevel=5
+
+FIREWALL_CONF=/etc/sysconfig/netfilter.d
+
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+
+input="$ipt -A INPUT -i"
+output="$ipt -A OUTPUT -o"
+forward="$ipt -A FORWARD -i"
+chain="$ipt -N"
+keep="-m conntrack --ctstate ESTABLISHED,RELATED"
+new="-m conntrack --ctstate NEW,ESTABLISHED"
+comment="-m comment --comment"
+
+usage(){
+    echo "$SCRIPTNAME {start|stop|restart|status}" >&2
+}
+
+accept(){
+    $ipt -A ${1^^} -j ACCEPT
+}
+
+drop(){
+    $ipt -A ${1^^} -j DROP
+}
+
+
+logger(){
+    $ipt -A ${2^^} -j LOG --log-level $1 --log-prefix "$2: "
+}
+
+debug(){
+    [ $debuglevel -ge 7 ] && logger debug $1
+}
+
+info(){
+    [ $debuglevel -ge 6 ] && logger info $1
+}
+
+notice(){
+    [ $debuglevel -ge 5 ] && logger notice $1
+}
+
+warning(){
+    [ $debuglevel -ge 4 ] && logger warning $1
+}
+
+err(){
+    [ $debuglevel -ge 3 ] && logger error $1
+}
+
+crit(){
+    [ $debuglevel -ge 2 ] && logger crit $1
+}
+
+chain(){
+    $ipt -N ${1^^}
+}
+
+rule(){
+    RULE=$1
+    declare -a TRULE=( ${RULE//./ } )
+    protocol="-m ${TRULE[2]} -p ${TRULE[2]}"
+    case ${TRULE[3]} in
+        dpt)
+            protocol="$protocol --dport ${TRULE[4]}"
+        ;;
+        spt)
+            protocol="$protocol --sport ${TRULE[4]}"
+        ;;
+        *)
+            protocol="$protocol --${TRULE[2]}-${TRULE[3]} ${TRULE[4]}"
+        ;;
+    esac
+    action="-j ${RULE^^}"
+    case ${TRULE[0]} in
+        out)
+            $output ${TRULE[1]} $protocol $new $action $comment $RULE
+        ;;
+        in)
+            $input ${TRULE[1]} $protocol $new $action $comment $RULE
+        ;;
+        *)
+            echo "erreur de syntax du fichier de configuration" 1>&2
+            exit 1
+        ;;
+    esac
+}
+
+
+load_custom_policy(){
+    test -r $FIREWALL_CONF && 
+    for FILE in `find $FIREWALL_CONF -name "ipt_*" -type f` ; do 
+        sed '/^[[:blank:]]*#/d; /^[[:blank:]]*$/d' "$FILE" |
+        while read -d $'\n' RULE; do
+            [ ${RULE:0:1} = '#' ] && continue
+            chain $RULE
+            rule $RULE
+            info $RULE
+            accept $RULE
+        done
+    done
+}
+
+load_default_policy(){
+# Block all in or forward traffic, accept out.
+    $ipt -P INPUT DROP
+    $ipt -P OUTPUT DROP
+    $ipt -P FORWARD DROP
+}
+
+load_standard_policy(){
+# Explicit block XMAS scans and NULL
+    for ETH in $NETIFS ; do
+        RULE=in.$ETH.tcp.scan.drop
+        chain $RULE
+        $input $ETH -m tcp -p tcp --tcp-flags ALL FIN,URG,PSH -j ${RULE^^} $comment $RULE 
+        $input $ETH -m tcp -p tcp --tcp-flags ALL ALL -j ${RULE^^} $comment $RULE
+        $input $ETH -m tcp -p tcp --tcp-flags ALL NONE -j ${RULE^^} $comment $RULE
+        $input $ETH -m tcp -p tcp --tcp-flags SYN,RST SYN,RST -j ${RULE^^} $comment $RULE
+        notice $RULE
+        drop $RULE
+
+    # Block broadcast    
+        RULE=in.$ETH.pkt.broadcast.drop
+        chain $RULE
+        $input $ETH -m pkttype --pkt-type broadcast -j ${RULE^^} $comment $RULE
+        info $RULE
+        drop $RULE
+
+    # Open established and related input
+        RULE=in.$ETH.any.keep.pass
+        chain $RULE
+        $input $ETH $keep -j ${RULE^^} $comment $RULE
+        debug $RULE
+        accept $RULE
+
+    # Open valid output
+        RULE=out.$ETH.any.valid.pass
+        chain $RULE
+        $output $ETH -m conntrack ! --ctstate INVALID -j ${RULE^^} $comment $RULE
+        debug $RULE
+        accept $RULE
+    done
+
+# Accept local loop
+    RULE=in.lo.any.pass
+    chain $RULE
+    $input lo  -j ${RULE^^} $comment $RULE
+    debug $RULE
+    accept $RULE
+
+    RULE=out.lo.any.pass
+    chain $RULE
+    $output lo -j ${RULE^^} $comment $RULE
+    debug $RULE
+    accept $RULE
+}
+
+
+load_end_policy(){
+
+# Drop all rest
+    for ETH in $NETIFS ; do
+        chain in.$ETH.any.drop
+        $input $ETH -j IN.${ETH^^}.ANY.DROP $comment in.$ETH.any.drop
+        err in.$ETH.any.drop
+        drop in.$ETH.any.drop
+
+        chain out.$ETH.any.drop
+        $output $ETH -j OUT.${ETH^^}.ANY.DROP $comment out.$ETH.any.drop
+        warning out.$ETH.any.drop
+        drop out.$ETH.any.drop
+        
+        chain for.$ETH.any.drop
+        $forward $ETH -j FOR.${ETH^^}.ANY.DROP $comment for.$ETH.any.drop
+        crit for.$ETH.any.drop
+        drop for.$ETH.any.drop
+    done
+}
+
+delete_rules(){
+# Delete all rules
+    $ipt -F
+    $ipt -X
+    $ipt -P INPUT ACCEPT
+    $ipt -P OUTPUT ACCEPT
+    $ipt -P FORWARD ACCEPT
+}
+
+
+case $1 in
+    start)
+        delete_rules
+        $ipt -Z
+        load_default_policy
+        load_standard_policy
+        load_custom_policy
+        load_end_policy
+    ;;
+    stop)
+        delete_rules
+    ;;
+    restart|restart)
+        delete_rules
+        $ipt -Z
+        load_default_policy
+        load_standard_policy
+        load_custom_policy
+        load_end_policy
+    ;;
+    status)
+        $ipt -n -L -v
+    ;;
+    *)
+        usage
+    ;;
+esac
+
+:

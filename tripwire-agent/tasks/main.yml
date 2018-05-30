@@ -1,0 +1,67 @@
+---
+
+  - name: Tripwire installation (from EPEL)
+    yum: name=tripwire state=latest
+    become: yes
+    become_method: sudo
+
+  - name: Copy factory keys and encrypted config
+    copy: src={{ item }} dest=/etc/tripwire/{{ item }} owner=root group=root mode=0400
+    with_items:
+      - tw.cfg
+      - tw.pol
+      - site.key
+    become: yes
+    become_method: sudo
+    when: custom_tripwire_policy is not defined
+
+  - name: Copy factory keys and encrypted config
+    copy: src={{ item }} dest=/etc/tripwire/{{ item }} owner=root group=root mode=0400
+    with_items:
+      - tw.cfg
+      - site.key
+    become: yes
+    become_method: sudo
+    when: custom_tripwire_policy is defined
+          and custom_tripwire_policy
+
+  - name: Copy tripwire policy
+    copy: src={{ inventory_dir }}/tripwire/tw-{{ inventory_hostname }}.pol dest=/etc/tripwire/tw.pol owner=root group=root mode=0400
+    become: yes
+    become_method: sudo
+    when: custom_tripwire_policy is defined
+          and custom_tripwire_policy
+
+  - name: Copy local key
+    copy: src=local.key dest=/etc/tripwire/{{inventory_hostname | lower }}-local.key owner=root group=root mode=0400
+    become: yes
+    become_method: sudo
+
+  - name: Cleaning clear old config files
+    file: path=/etc/tripwire/{{ item }} state=absent
+    with_items:
+      - twcfg.txt
+      - twpol.txt
+    become: yes
+    become_method: sudo
+
+  - name: Initialize tripwire database
+    shell: tripwire --init -P {{ tw_local_passwd }}
+    become: yes
+    become_method: sudo
+
+  - name: Add tripwire check cron
+    cron: name="Daily Tripwire scan"
+          minute="0"
+          hour="*/6"
+          job="/sbin/tripwire --check"
+    become: yes
+    become_method: sudo
+
+  - name: Add cron to clean reports older than 1 month
+    cron: name="Daily Tripwire reports cleaning"
+          minute="0"
+          hour="*/6"
+          job="find /var/lib/tripwire/report/ -mtime +30  -name "*.twr" \-exec rm -f {} \;"
+    become: yes
+    become_method: sudo

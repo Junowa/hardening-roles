@@ -1,0 +1,5 @@
+# Defaults vars
+
+rsyncd_name: share
+rsyncd_path: /data/share/
+rsyncd_fw_zone: public

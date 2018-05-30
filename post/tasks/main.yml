@@ -1,0 +1,11 @@
+
+# Cleaning 
+
+
+  - meta: flush_handlers
+
+# TODO: remove using file module and with_fileglob when working with dirs
+  - name: Remove /tmp/yum-provisioner-XXX
+    shell: rm -Rf /tmp/yum-provisioner-* 
+    become: yes
+    become_method: sudo

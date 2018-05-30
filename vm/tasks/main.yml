@@ -1,0 +1,12 @@
+---
+
+  - include: tasks/clone2.yml
+    tags:
+      - clone
+
+  - include: tasks/reconfig.yml
+    tags:
+      - reconfig
+
+  - pause:
+      seconds: 20

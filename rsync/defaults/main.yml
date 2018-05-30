@@ -1,0 +1,5 @@
+# Default vars
+
+rsync_exclude: isos/
+rsync_remote: "rsync://myserver/data" 
+rsync_local: "/data/"

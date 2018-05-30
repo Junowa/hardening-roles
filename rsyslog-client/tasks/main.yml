@@ -1,0 +1,77 @@
+---
+
+  - name: Uninstall syslog-ng
+    yum: name="syslog-ng" state=absent
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: Install rsyslog, gnutls
+    yum: name={{ item }} state=installed
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+    with_items:
+      - rsyslog
+      - gnutls-utils
+      - rsyslog-gnutls
+
+  - name: Create rsyslog protected directory
+    file: path=/rsyslog/protected/ state=directory owner=root group=root
+    become: yes
+    become_method: sudo
+
+  - name: Copy syslog certificates
+    copy: src="{{ inventory_dir }}/certificates/rsyslog/ca.pem" dest=/rsyslog/protected/ca.pem owner=root group=root
+    notify:
+      - restart rsyslog
+    become: yes
+    become_method: sudo
+    ignore_errors: yes
+
+  - name: Set syslog configuration
+    template: src=rhel7/rsyslog.conf.j2 dest=/etc/rsyslog.conf owner=root group=root
+    notify:
+      - restart rsyslog
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+          and ansible_distribution_major_version == "7"
+
+  - name: Set syslog configuration
+    template: src=rhel6/rsyslog.conf.j2 dest=/etc/rsyslog.conf owner=root group=root
+    notify:
+      - restart rsyslog
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+          and ansible_distribution_major_version == "6"
+
+  - name: Set syslog configuration
+    template: src=tls.conf.j2 dest=/etc/rsyslog.d/tls.conf owner=root group=root
+    notify:
+      - restart rsyslog
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+
+  - name: Be sure rsyslog is running and enabled
+    service: name=rsyslog state=started enabled=yes
+    become: yes
+    become_method: sudo
+    when: (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+          and ansible_distribution_major_version == "6"
+    
+###########################
+## Log rotation
+############################
+
+  - name: Copy logrotate configuration
+    template: src=logrotate.conf.j2 dest=/etc/logrotate.conf
+    become: yes
+    become_method: sudo
+
+  - name: Install syslog logrotate configuration
+    copy: src=syslog.logrotate dest=/etc/logrotate.d/syslog owner=root group=root mode=0644
+    become: yes
+    become_method: sudo

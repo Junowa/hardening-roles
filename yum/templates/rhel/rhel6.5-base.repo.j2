@@ -1,0 +1,9 @@
+
+[rhel-6-server-rpms-pes]
+name = Red Hat Enterprise Linux 6 Server (RPMs)
+baseurl = http://{{ repo }}/rhel/{{ ansible_distribution_version }}/iso/
+enabled = 1
+gpgcheck = 0
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+metadata_expire = 86400
+ui_repoid_vars = releasever basearch

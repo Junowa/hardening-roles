@@ -1,0 +1,9 @@
+---
+
+  - name: restart network
+    systemd: 
+      name: network 
+      state: restarted 
+      daemon_reload: yes
+    become: yes
+    become_method: sudo

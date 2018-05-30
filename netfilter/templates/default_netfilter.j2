@@ -1,0 +1,8 @@
+#NETIFS='eth0 eth1 ethx'
+NETIFS='
+{%- for intf in ansible_interfaces -%}
+	{%- if intf|string() != "lo"|string() -%}
+		{{ intf }}{% if not loop.last %} {% endif %}
+	{%- endif -%}
+{%- endfor -%}'
+debuglevel=3

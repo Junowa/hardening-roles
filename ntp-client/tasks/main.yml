@@ -1,0 +1,25 @@
+---
+  - name: Remove chronyd
+    yum: name=chronyd state=absent
+    become: yes
+    become_method: sudo
+
+  - name: Installation de NTP
+    yum: name=ntp state=latest
+    become: yes
+    become_method: sudo
+
+  - name: NTP client configuration
+    template: src=../templates/ntp-client.conf.j2 dest=/etc/ntp.conf owner=root group=root mode=0644
+    become: yes
+    become_method: sudo
+
+  - name: NTP client keys
+    copy: src=etc/ntp/keys dest=/etc/ntp/keys owner=root group=root mode=0600
+    become: yes
+    become_method: sudo
+
+  - name: Restart ntpd 
+    service: name=ntpd enabled=yes state=restarted
+    become: yes
+    become_method: sudo

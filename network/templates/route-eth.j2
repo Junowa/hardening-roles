@@ -1,0 +1,5 @@
+{% if item.static_routes is defined %} 
+{% for route in item.static_routes %}
+{{ route.subnet }}/{{ route.prefix }} via {{ route.next_hop }} dev eth{{ item.device_id }}
+{% endfor %}
+{% endif %}

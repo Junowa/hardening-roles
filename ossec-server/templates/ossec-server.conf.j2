@@ -1,0 +1,23 @@
+
+<ossec_config>
+  <global>
+    <logall>no</logall>
+  </global>
+
+  <syslog_output>
+    <server>{{ udp_log_server_ip }}</server>
+    <port>{{ udp_log_server_udpport }}</port>
+    <level>1</level>
+    <format>default</format>
+  </syslog_output>
+
+  <rules>
+    <include>rules_config.xml</include>
+    <include>ossec_rules.xml</include>
+  </rules>
+
+  <remote>
+    <connection>secure</connection>
+  </remote>
+
+</ossec_config>

@@ -1,0 +1,6 @@
+---
+
+  - name: restart rsyncd
+    service: name=rsyncd state=restarted
+    become: yes
+    become_method: sudo

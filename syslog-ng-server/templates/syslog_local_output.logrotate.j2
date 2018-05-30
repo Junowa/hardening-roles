@@ -1,0 +1,11 @@
+"{{ syslog_local_output }}" {
+        daily
+        missingok
+        rotate 1
+        compress
+        delaycompress
+        copytruncate
+        minsize 100k
+}
+
+

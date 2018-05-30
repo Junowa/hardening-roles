@@ -1,0 +1,8 @@
+---
+
+# bugzilla.redhat.com - Bug 973697
+
+- name: restart auditd
+  shell: service auditd restart
+  become: yes
+  become_method: sudo

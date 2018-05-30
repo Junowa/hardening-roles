@@ -1,0 +1,11 @@
+# Make gtls driver the default
+$DefaultNetStreamDriver gtls
+
+# Certificates
+$DefaultNetstreamDriverCAFile		/rsyslog/protected/ca.pem
+
+$ActionSendStreamDriverMode		1
+$ActionSendStreamDriverAuthMode		x509/name
+
+# Send all messages
+*.info @@{{ tls_log_server_hostname }}:{{ tls_log_server_tcpport }}

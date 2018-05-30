@@ -1,0 +1,42 @@
+---
+
+  - name: exec_shield
+    sysctl: >
+      name=kernel.exec-shield
+      value=1
+      state=present
+      ignoreerrors=yes
+    become: yes
+    become_method: sudo
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "6"
+          or (ansible_distribution == "RedHat" and ansible_distribution_major_version == "6")
+
+  - name: core_dumps suid_dumpable
+    sysctl: >
+      name=fs.suid_dumpable
+      value=0
+      state=present
+      ignoreerrors=yes
+    become: yes
+    become_method: sudo
+
+  - name: core_dumps hard limit
+    copy:
+      src=etc/security/limits.conf
+      dest=/etc/security/limits.conf
+      owner=root
+      group=root
+      mode=0644
+    become: yes
+    become_method: sudo
+
+# Disable unecessary services
+  - name: Disable unnecessary services
+    systemd: 
+      name: "{{ item }}"
+      enabled: no
+      state: stopped
+    with_items: "{{ disable_services_list }}"
+    ignore_errors: yes
+    become: yes
+    become_method: sudo

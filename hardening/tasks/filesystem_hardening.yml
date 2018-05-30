@@ -1,0 +1,134 @@
+---
+
+# Filesystem hardening
+## GC-LINUX-R2 - schéma de partitionnement
+## GC-LINUX-R32 - nodev, nosuid, noexec
+## GC-LINUX-R33 - nodev, nosuid, noexec
+## GC-LINUX-R34 - nodev, nosuid, noexec
+#TODO manage all partitions
+
+  - name: Set nodev,nosuid,noexec option for /tmp Partition
+    mount: >
+      name="/tmp"
+      src={{ item.device }}
+      state=mounted
+      fstype={{ item.fstype }}
+      opts="nodev,nosuid,noexec"
+    when: item.mount == "/tmp"
+    with_items: "{{ ansible_mounts }}"
+    become: yes
+    become_method: sudo
+
+  - name: Set nodev,nosuid,noexec option for /home Partition
+    mount: >
+      name="/home"
+      src={{ item.device }}
+      state=mounted
+      fstype={{ item.fstype }}
+      opts="nodev,nosuid,noexec"
+    when: item.mount == "/home"
+    with_items: "{{ ansible_mounts }}"
+    become: yes
+    become_method: sudo
+
+  - name: Set nodev,nosuid,noexec option for /var Partition
+    mount: >
+      name="/var"
+      src={{ item.device }}
+      state=mounted
+      fstype={{ item.fstype }}
+      opts="nodev,nosuid,noexec"
+    when: item.mount == "/var"
+    with_items: "{{ ansible_mounts }}"
+    become: yes
+    become_method: sudo
+
+  - name: Set nodev,nosuid,noexec option for /var/log Partition
+    mount: >
+      name="/var/log"
+      src={{ item.device }}
+      state=mounted
+      fstype={{ item.fstype }}
+      opts="nodev,nosuid,noexec"
+    when: item.mount == "/var/log"
+    with_items: "{{ ansible_mounts }}"
+    become: yes
+    become_method: sudo
+
+  - name: Set nodev,nosuid,noexec option for /var/log/audit Partition
+    mount: >
+      name="/var/log/audit"
+      src={{ item.device }}
+      state=mounted
+      fstype={{ item.fstype }}
+      opts="nodev,nosuid,noexec"
+    when: item.mount == "/var/log/audit"
+    with_items: "{{ ansible_mounts }}"
+    become: yes
+    become_method: sudo
+
+  - name: Bind Mount the /var/tmp directory to /tmp
+    mount: >
+      name="/var/tmp"
+      src="/tmp"
+      state=mounted
+      fstype="none"
+      opts="bind"
+    when: item.mount == "/tmp"
+    with_items: "{{ ansible_mounts }}"
+    become: yes
+    become_method: sudo
+
+  - name: Add noexec Option to /dev/shm Partition
+    mount: >
+      name="/dev/shm"
+      src="none"
+      state=mounted
+      fstype="tmpfs"
+      opts="nodev,nosuid,noexec"
+    become: yes
+    become_method: sudo
+
+
+  - name: Disable Interactive Boot
+    lineinfile: >
+      dest=/etc/sysconfig/init
+      regexp=^PROMPT=
+      line=PROMPT=no
+    become: yes
+    become_method: sudo
+
+
+  - name: Set Daemon umask
+    lineinfile: >
+      dest=/etc/sysconfig/init
+      state=present
+      regexp=^umask
+      line="umask 027"
+    become: yes
+    become_method: sudo
+
+  - name: Chmod 644 /var/log/wtmp
+    file: >
+      path=/var/log/wtmp
+      owner=root
+      mode=0644
+    become: yes
+    become_method: sudo
+
+  - name: Chmod 644 /var/run/utmp
+    file: >
+      path=/var/run/utmp
+      owner=root
+      mode=0644
+    become: yes
+    become_method: sudo
+
+  - name: Enable Randomized Virtual Memory Region Placement
+    sysctl: >
+      name=kernel.randomize_va_space
+      value=2
+      state=present
+      ignoreerrors=yes
+    become: yes
+    become_method: sudo
